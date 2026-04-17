@@ -26,3 +26,4 @@ temp/
 
 # Test artifacts
 junit.xml
+argocd
