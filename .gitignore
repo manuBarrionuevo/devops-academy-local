@@ -1,0 +1,28 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Environment
+.env
+.env.*
+
+# Coverage
+coverage/
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Temp
+tmp/
+temp/
+
+# Helm / generated
+*.tgz
+
+# Test artifacts
+junit.xml
