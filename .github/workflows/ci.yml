@@ -5,6 +5,14 @@ on:
     branches: ["main"]
   pull_request:
 
+permissions:
+  contents: write
+  packages: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/devops-academy-app
+
 jobs:
   ci:
     runs-on: self-hosted
@@ -14,22 +22,47 @@ jobs:
         working-directory: app
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v5
 
-      - name: Node setup
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
           node-version: 20
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
+      - name: Run lint
         run: npm run lint
 
       - name: Run tests
         run: npm test
 
+      - name: Set image tag
+        id: vars
+        run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
       - name: Build Docker image
-        run: docker build -t devops-academy-app:ci .
+        run: docker build -t $IMAGE_NAME:${{ steps.vars.outputs.TAG }} .
+
+      - name: Push Docker image
+        run: docker push $IMAGE_NAME:${{ steps.vars.outputs.TAG }}
+
+      - name: Update Helm values.yaml
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          sed -i 's|repository: .*|repository: '"$IMAGE_NAME"'|' ../helm/devops-app/values.yaml
+          sed -i 's|tag: .*|tag: "'"${{ steps.vars.outputs.TAG }}"'"|' ../helm/devops-app/values.yaml
+
+      - name: Commit and push Helm changes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add ../helm/devops-app/values.yaml
+          git diff --cached --quiet || git commit -m "update image tag to ${{ steps.vars.outputs.TAG }}"
+          git push
