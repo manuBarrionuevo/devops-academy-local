@@ -2,7 +2,11 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/manubarrionuevo/devops-academy-app
+<<<<<<< HEAD
   tag: "35ee438"
+=======
+  tag: "latest"
+>>>>>>> 4ed9393 (add devops gitops documentation)
   pullPolicy: IfNotPresent
 
 service:
