@@ -27,3 +27,8 @@ temp/
 # Test artifacts
 junit.xml
 argocd
+actions-runner/
+
+actions-runner/
+app/node_modules/
+node_modules/
