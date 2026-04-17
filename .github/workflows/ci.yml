@@ -11,7 +11,7 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/devops-academy-app
+  IMAGE_NAME: ghcr.io/manubarrionuevo/devops-academy-app
 
 jobs:
   ci:
@@ -50,6 +50,7 @@ jobs:
         run: docker build -t $IMAGE_NAME:${{ steps.vars.outputs.TAG }} .
 
       - name: Push Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: docker push $IMAGE_NAME:${{ steps.vars.outputs.TAG }}
 
       - name: Update Helm values.yaml
