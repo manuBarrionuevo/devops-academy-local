@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/manubarrionuevo/devops-academy-app
-  tag: "latest"
+  tag: "9597969"
   pullPolicy: IfNotPresent
 
 service:
