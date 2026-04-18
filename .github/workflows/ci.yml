@@ -15,6 +15,7 @@ env:
 
 jobs:
   ci:
+    name: 🚀 Build, Test and Publish
     runs-on: self-hosted
 
     defaults:
@@ -22,48 +23,86 @@ jobs:
         working-directory: app
 
     steps:
-      - name: Checkout repository
+      - name: 📥 Checkout repository
         uses: actions/checkout@v5
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm ci
+      - name: 📦 Install dependencies
+        run: |
+          echo "::group::📦 Installing dependencies"
+          npm ci
+          echo "::endgroup::"
+          echo "::notice::Dependencies installed successfully"
 
-      - name: Run lint
-        run: npm run lint
+      - name: 🧹 Run lint
+        run: |
+          echo "::group::🧹 ESLint"
+          npm run lint
+          echo "::endgroup::"
+          echo "::notice::Lint finished successfully"
 
-      - name: Run tests
-        run: npm test
+      - name: 🧪 Run tests
+        run: |
+          echo "::group::🧪 Jest tests"
+          npm test
+          echo "::endgroup::"
+          echo "::notice::Tests passed"
 
-      - name: Set image tag
+      - name: 🏷️ Set image tag
         id: vars
-        run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        run: |
+          echo "::group::🏷️ Generating image tag"
+          echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          echo "Generated tag: ${GITHUB_SHA::7}"
+          echo "::endgroup::"
 
-      - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Build Docker image
-        run: docker build -t $IMAGE_NAME:${{ steps.vars.outputs.TAG }} .
-
-      - name: Push Docker image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: docker push $IMAGE_NAME:${{ steps.vars.outputs.TAG }}
-
-      - name: Update Helm values.yaml
+      - name: 🔐 Login to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
+          echo "::group::🔐 Logging in to GHCR"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo "::endgroup::"
+          echo "::notice::GHCR login successful"
+
+      - name: 🐳 Build Docker image
+        run: |
+          echo "::group::🐳 Docker build"
+          docker build -t $IMAGE_NAME:${{ steps.vars.outputs.TAG }} .
+          echo "::endgroup::"
+          echo "::notice::Docker image built: $IMAGE_NAME:${{ steps.vars.outputs.TAG }}"
+
+      - name: 📤 Push Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "::group::📤 Docker push"
+          docker push $IMAGE_NAME:${{ steps.vars.outputs.TAG }}
+          echo "::endgroup::"
+          echo "::notice::Docker image pushed successfully"
+
+      - name: 📝 Update Helm values.yaml
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "::group::📝 Updating Helm values"
           sed -i 's|repository: .*|repository: '"$IMAGE_NAME"'|' ../helm/devops-app/values.yaml
           sed -i 's|tag: .*|tag: "'"${{ steps.vars.outputs.TAG }}"'"|' ../helm/devops-app/values.yaml
+          echo "Updated values.yaml with:"
+          echo "repository: $IMAGE_NAME"
+          echo "tag: ${{ steps.vars.outputs.TAG }}"
+          echo "::endgroup::"
+          echo "::notice::Helm values updated"
 
-      - name: Commit and push Helm changes
+      - name: 🚀 Commit and push Helm changes
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
+          echo "::group::🚀 Commit and push Helm changes"
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add ../helm/devops-app/values.yaml
           git diff --cached --quiet || git commit -m "update image tag to ${{ steps.vars.outputs.TAG }}"
           git push
+          echo "::endgroup::"
+          echo "::notice::Repository updated successfully"
